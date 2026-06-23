@@ -24,3 +24,4 @@ RUN pnpm --filter @pizzeria/api exec nest build
 EXPOSE 3000
 
 CMD ["sh", "-c", "pnpm --filter @pizzeria/api exec prisma migrate deploy && pnpm --filter @pizzeria/api exec node dist/main.js"]
+# Force rebuild 23/06/2026 22:11:35,46 
