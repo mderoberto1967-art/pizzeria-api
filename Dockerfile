@@ -4,8 +4,13 @@ WORKDIR /app
 
 RUN npm install -g pnpm
 
-# Copia i file di configurazione
+# Copia i file di configurazione del workspace
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copia i pacchetti condivisi
+COPY packages ./packages/
+
+# Copia il backend API
 COPY apps/api/package.json ./apps/api/
 COPY apps/api/prisma ./apps/api/prisma/
 COPY apps/api/src ./apps/api/src/
@@ -24,4 +29,3 @@ RUN pnpm --filter @pizzeria/api exec nest build
 EXPOSE 3000
 
 CMD ["sh", "-c", "pnpm --filter @pizzeria/api exec prisma migrate deploy && pnpm --filter @pizzeria/api exec node dist/main.js"]
-# Force rebuild 23/06/2026 22:11:35,46 
