@@ -4,16 +4,23 @@ WORKDIR /app
 
 RUN npm install -g pnpm
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copia solo i file necessari
+COPY package.json pnpm-lock.yaml ./
 COPY api/package.json ./api/
+COPY api/prisma ./api/prisma/
+COPY api/src ./api/src/
+COPY api/tsconfig*.json ./api/
+COPY api/nest-cli.json ./api/
 
-RUN pnpm install --frozen-lockfile
+# Installa le dipendenze
+RUN pnpm install
 
-COPY . .
+# Genera Prisma client
+RUN cd api && pnpm exec prisma generate
 
-RUN pnpm --filter @pizzeria/api exec prisma generate
-RUN pnpm --filter @pizzeria/api build
+# Build del backend
+RUN cd api && pnpm exec nest build
 
 EXPOSE 3000
 
-CMD ["pnpm", "--filter", "@pizzeria/api", "start:prod"]
+CMD ["node", "api/dist/main.js"]
