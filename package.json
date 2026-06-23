@@ -1,0 +1,13 @@
+{
+  "name": "pizzeria-app",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @pizzeria/api start:dev",
+    "dev:web": "pnpm --filter @pizzeria/web-admin dev",
+    "dev:mobile": "pnpm --filter @pizzeria/mobile start",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm --filter @pizzeria/api build",
+    "start": "pnpm --filter @pizzeria/api start"
+  }
+}

@@ -1,0 +1,323 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------
+// CONFIGURAZIONE GLOBALE (solo 1 record)
+// -----------------------------------------------------------
+model Impostazione {
+  id          String   @id @default(uuid())
+  chiave      String   @unique
+  valore      String
+  aggiornatoA DateTime @updatedAt
+}
+
+// -----------------------------------------------------------
+// MULTI-PIZZERIA
+// -----------------------------------------------------------
+model Pizzeria {
+  id              String         @id @default(uuid())
+  codice          String         @unique // CODICE che la pizzeria usa per connettersi alla regia
+  nome            String
+  indirizzo       String?
+  telefono        String?
+  email           String?
+  attiva          Boolean        @default(true)
+  bloccata        Boolean        @default(false) // blocco remoto da console regia
+  ipPubblico      String?        // IP della pizzeria per teleassistenza
+  ultimoAccesso   DateTime?
+  creatoA         DateTime       @default(now())
+  
+  // Relazioni
+  ordini          Ordine[]
+  venditeStorico  VenditaStorico[]
+  comunicazioni   Comunicazione[]
+  articoli        Articolo[]
+  categorie       Categoria[]
+  backup          Backup[]
+  royaltyPeriodi  RoyaltyPeriodo[]
+}
+
+// -----------------------------------------------------------
+// CODICI ATTIVAZIONE / LICENZE
+// -----------------------------------------------------------
+model CodiceAttivazione {
+  id              String    @id @default(uuid())
+  codice          String    @unique // es. "PIZZA-ABCD-EFGH"
+  tipo            String    @default("standard") // standard, demo
+  giorniValidita  Int       @default(365) // per demo: 7, 14, 30
+  usato           Boolean   @default(false)
+  dataScadenza    DateTime? // calcolata al momento dell'uso
+  pizzeriaId      String?
+  creatoA         DateTime  @default(now())
+}
+
+// -----------------------------------------------------------
+// OPERATORI (dipendenti di una pizzeria)
+// -----------------------------------------------------------
+model Operatore {
+  id        String   @id @default(uuid())
+  pizzeriaId String?
+  nome      String
+  ruolo     String   @default("cassa")
+  pinHash   String?
+  attivo    Boolean  @default(true)
+  creatoA   DateTime @default(now())
+}
+
+// -----------------------------------------------------------
+// CATEGORIE MENU (per pizzeria specifica)
+// -----------------------------------------------------------
+model Categoria {
+  id             String          @id @default(uuid())
+  pizzeriaId     String?
+  nome           String
+  ordine         Int             @default(0)
+  attiva         Boolean         @default(true)
+  sottoCategorie SottoCategoria[]
+  articoli       Articolo[]
+  pizzeria       Pizzeria?       @relation(fields: [pizzeriaId], references: [id], onDelete: SetNull)
+}
+
+model SottoCategoria {
+  id          String     @id @default(uuid())
+  categoriaId String
+  nome        String
+  ordine      Int        @default(0)
+  attiva      Boolean    @default(true)
+  categoria   Categoria  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  articoli    Articolo[]
+}
+
+// -----------------------------------------------------------
+// INGREDIENTI
+// -----------------------------------------------------------
+model Ingrediente {
+  id           String  @id @default(uuid())
+  nome         String
+  disponibile  Boolean @default(true)
+  costoUnitario Float?
+  allergeni    String?
+  creatoA      DateTime @default(now())
+}
+
+// -----------------------------------------------------------
+// ARTICOLI / PRODOTTI (per pizzeria)
+// -----------------------------------------------------------
+model Articolo {
+  id                    String          @id @default(uuid())
+  pizzeriaId            String?
+  categoriaId           String
+  sottoCategoriaId      String?
+  nome                  String
+  tipo                  String          @default("altro") // pizza, bevanda, dolce, altro
+  disponibile           Boolean         @default(true)
+  prezzi                String          @default("{}")
+  prezziMaxy            String          @default("{}")
+  ingredientiBaseIds    String          @default("[]")
+  categorieStampantiIds String          @default("[]")
+  ordine                Int             @default(0)
+  creatoA               DateTime        @default(now())
+  aggiornatoA           DateTime        @updatedAt
+  categoria             Categoria       @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  sottoCategoria        SottoCategoria? @relation(fields: [sottoCategoriaId], references: [id], onDelete: SetNull)
+  pizzeria              Pizzeria?       @relation(fields: [pizzeriaId], references: [id], onDelete: SetNull)
+  righeOrdine           RigaOrdine[]
+  venditaStorico        VenditaStorico[]
+}
+
+// -----------------------------------------------------------
+// LISTINI
+// -----------------------------------------------------------
+model Listino {
+  id      String  @id @default(uuid())
+  pizzeriaId String?
+  nome    String
+  attivo  Boolean @default(false)
+  regole  String  @default("[]")
+  creatoA DateTime @default(now())
+}
+
+// -----------------------------------------------------------
+// STAMPANTI
+// -----------------------------------------------------------
+model CategoriaStampante {
+  id        String      @id @default(uuid())
+  nome      String
+  colore    String?
+  stampanti Stampante[]
+}
+
+model Stampante {
+  id                  String              @id @default(uuid())
+  categoriaStampanteId String?
+  nome                String
+  ip                  String
+  porta               Int                 @default(9100)
+  modello             String?
+  protocollo          String?
+  attiva              Boolean             @default(true)
+  categoriaStampante  CategoriaStampante? @relation(fields: [categoriaStampanteId], references: [id], onDelete: SetNull)
+}
+
+// -----------------------------------------------------------
+// SALE E TAVOLI
+// -----------------------------------------------------------
+model Sala {
+  id        String   @id @default(uuid())
+  pizzeriaId String?
+  nome      String
+  ordine    Int      @default(0)
+  attiva    Boolean  @default(true)
+  tavoli    Tavolo[]
+}
+
+model Tavolo {
+  id     String  @id @default(uuid())
+  salaId String?
+  numero Int
+  nome   String?
+  posti  Int     @default(4)
+  stato  String  @default("libero")
+  precontoRichiesto Boolean @default(false)
+  precontoTotale Float?
+  attivo Boolean @default(true)
+  sala   Sala?   @relation(fields: [salaId], references: [id], onDelete: SetNull)
+  ordini Ordine[]
+}
+
+// -----------------------------------------------------------
+// CLIENTI
+// -----------------------------------------------------------
+model Cliente {
+  id        String   @id @default(uuid())
+  pizzeriaId String?
+  nome      String
+  cognome   String?
+  telefono  String?
+  email     String?
+  indirizzo String?
+  note      String?
+  creatoA   DateTime @default(now())
+  ordini    Ordine[]
+}
+
+// -----------------------------------------------------------
+// ORDINI (con riferimento pizzeria e metodo pagamento)
+// -----------------------------------------------------------
+model Ordine {
+  id              String         @id @default(uuid())
+  numero          Int
+  pizzeriaId      String
+  tavoloId        String?
+  clienteId       String?
+  canale          String         @default("web_admin") // web_admin, maxy_burger, telefono, tavolo, altro
+  stato           String         @default("ricevuto")
+  totale          Float          @default(0)
+  numeroPizze     Int            @default(0)
+  metodoPagamento String?        // contanti, pos, online, buoni, bonifico
+  note            String?
+  creatoA         DateTime       @default(now())
+  aggiornatoA     DateTime       @updatedAt
+  completatoA     DateTime?
+  pizzeria        Pizzeria       @relation(fields: [pizzeriaId], references: [id], onDelete: Cascade)
+  tavolo          Tavolo?        @relation(fields: [tavoloId], references: [id], onDelete: SetNull)
+  cliente         Cliente?       @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  righe           RigaOrdine[]
+  storico         VenditaStorico[]
+}
+
+model RigaOrdine {
+  id                  String   @id @default(uuid())
+  ordineId            String
+  articoloId          String?
+  nomeSnapshot        String
+  formatoSnapshot     String?
+  prezzoUnitario      Float
+  quantita            Int      @default(1)
+  totaleRiga          Float
+  ingredientiAggiunti String   @default("[]")
+  ingredientiRimossi  String   @default("[]")
+  note                String?
+  ordine              Ordine   @relation(fields: [ordineId], references: [id], onDelete: Cascade)
+  articolo            Articolo? @relation(fields: [articoloId], references: [id], onDelete: SetNull)
+}
+
+// -----------------------------------------------------------
+// VENDITA STORICO (pizzeria + metodo pagamento + royalty)
+// -----------------------------------------------------------
+model VenditaStorico {
+  id             String    @id @default(uuid())
+  data           DateTime  @default(now())
+  pizzeriaId     String
+  articoloId     String?
+  nomeSnapshot   String
+  tipo           String    @default("altro") // pizza, bevanda, dolce, altro
+  quantita       Int
+  totale         Float
+  ordineId       String?
+  metodoPagamento String   @default("contanti")
+  royaltyCalcolata Boolean @default(false)
+  pizzeria       Pizzeria  @relation(fields: [pizzeriaId], references: [id], onDelete: Cascade)
+  articolo       Articolo? @relation(fields: [articoloId], references: [id], onDelete: SetNull)
+  ordine         Ordine?   @relation(fields: [ordineId], references: [id], onDelete: SetNull)
+}
+
+// -----------------------------------------------------------
+// COMUNICAZIONI (teleassistenza per pizzeria)
+// -----------------------------------------------------------
+model Comunicazione {
+  id        String   @id @default(uuid())
+  pizzeriaId String? // null = broadcast a tutte
+  mittente  String   // regia, pizzeria
+  tipo      String   @default("info") // info, teleassistenza, blocco, backup
+  testo     String
+  timestamp DateTime @default(now())
+  letta     Boolean  @default(false)
+  pizzeria  Pizzeria? @relation(fields: [pizzeriaId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------
+// BACKUP (per pizzeria)
+// -----------------------------------------------------------
+model Backup {
+  id              String   @id @default(uuid())
+  pizzeriaId      String
+  timestamp       DateTime @default(now())
+  datiJson        String
+  dimensioneBytes Int      @default(0)
+  note            String?
+  pizzeria        Pizzeria @relation(fields: [pizzeriaId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------
+// ROYALTY (calcolo periodico per pizzeria)
+// -----------------------------------------------------------
+model RoyaltyPeriodo {
+  id             String   @id @default(uuid())
+  pizzeriaId     String
+  periodo        String   // YYYY-MM
+  pizzeVendute   Int      @default(0)
+  importoPerPizza Float   @default(0)
+  totale         Float    @default(0)
+  pagato         Boolean  @default(false)
+  note           String?
+  creatoA        DateTime @default(now())
+  pizzeria       Pizzeria @relation(fields: [pizzeriaId], references: [id], onDelete: Cascade)
+  
+  @@unique([pizzeriaId, periodo])
+}
+
+// -----------------------------------------------------------
+// CONFIGURAZIONE PAGAMENTI
+// -----------------------------------------------------------
+model ConfigurazionePagamenti {
+  id         Int    @id @default(1)
+  metodiJson String @default("{}")
+  epsonJson  String @default("{}")
+}
