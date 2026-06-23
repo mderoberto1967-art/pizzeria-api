@@ -15,12 +15,12 @@ COPY api/nest-cli.json ./api/
 # Installa le dipendenze
 RUN pnpm install
 
-# Genera Prisma client
-RUN cd api && pnpm exec prisma generate
+# Genera Prisma client usando il workspace filter
+RUN pnpm --filter @pizzeria/api exec prisma generate
 
-# Build del backend
-RUN cd api && pnpm exec nest build
+# Build del backend usando il workspace filter
+RUN pnpm --filter @pizzeria/api exec nest build
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "cd api && pnpm exec prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "pnpm --filter @pizzeria/api exec prisma migrate deploy && pnpm --filter @pizzeria/api exec node dist/main.js"]
