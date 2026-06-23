@@ -6,11 +6,11 @@ RUN npm install -g pnpm
 
 # Copia i file di configurazione
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY api/package.json ./api/
-COPY api/prisma ./api/prisma/
-COPY api/src ./api/src/
-COPY api/tsconfig*.json ./api/
-COPY api/nest-cli.json ./api/
+COPY apps/api/package.json ./apps/api/
+COPY apps/api/prisma ./apps/api/prisma/
+COPY apps/api/src ./apps/api/src/
+COPY apps/api/tsconfig*.json ./apps/api/
+COPY apps/api/nest-cli.json ./apps/api/
 
 # Installa le dipendenze
 RUN pnpm install
