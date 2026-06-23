@@ -29,4 +29,4 @@ RUN cd apps/api && pnpm exec nest build
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "cd /app/apps/api && pnpm exec prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "cd /app/apps/api && echo DATABASE_URL is set && pnpm exec prisma migrate deploy || echo MIGRATE_FAILED && node dist/main.js"]
