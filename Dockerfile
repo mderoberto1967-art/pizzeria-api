@@ -2,7 +2,8 @@ FROM node:20-slim
 
 WORKDIR /app
 
-RUN npm install -g pnpm
+# Installa pnpm e OpenSSL richiesto da Prisma
+RUN npm install -g pnpm && apt-get update -y && apt-get install -y openssl
 
 # Copia i file di configurazione del workspace
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -20,12 +21,12 @@ COPY apps/api/nest-cli.json ./apps/api/
 # Installa le dipendenze
 RUN pnpm install
 
-# Genera Prisma client usando il workspace filter
-RUN pnpm --filter @pizzeria/api exec prisma generate
+# Genera Prisma client
+RUN cd apps/api && pnpm exec prisma generate
 
-# Build del backend usando il workspace filter
-RUN pnpm --filter @pizzeria/api exec nest build
+# Build del backend
+RUN cd apps/api && pnpm exec nest build
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "pnpm --filter @pizzeria/api exec prisma migrate deploy && pnpm --filter @pizzeria/api exec node dist/main.js"]
+CMD ["sh", "-c", "cd /app/apps/api && pnpm exec prisma migrate deploy && node dist/main.js"]
