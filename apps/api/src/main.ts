@@ -9,7 +9,7 @@ async function bootstrap() {
   app.enableCors({ origin: '*' });
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
-  const port = process.env.PORT ?? 4000;
+  const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   await app.listen(port, '0.0.0.0');
   console.log(`Backend pizzeria avviato su porta ${port}`);
 }

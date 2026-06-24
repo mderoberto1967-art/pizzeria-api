@@ -34,5 +34,6 @@ RUN cd /app/apps/api && pnpm exec nest build
 
 EXPOSE 3000
 
-# TEMP: mantieni il container aperto per debug
-CMD ["/bin/sh", "-c", "cd /app/apps/api && (pnpm exec prisma migrate deploy || true) && (node dist/main.js &) && tail -f /dev/null"]
+# Railway richiede un processo in foreground.
+# ENTRYPOINT non funziona con shell script Windows-CRLF, usiamo CMD inline.
+CMD ["/bin/sh", "-c", "cd /app/apps/api && echo '=== Risto Galaxy startup ===' && echo 'PORT='${PORT} && pnpm exec prisma migrate deploy && exec node dist/main.js"]

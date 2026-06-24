@@ -20,6 +20,7 @@ import { SyncModule } from './modules/sync/sync.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { PizzerieModule } from './modules/pizzerie/pizzerie.module';
 import { CodiciModule } from './modules/codici/codici.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -45,5 +46,6 @@ import { CodiciModule } from './modules/codici/codici.module';
     PizzerieModule,
     CodiciModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
