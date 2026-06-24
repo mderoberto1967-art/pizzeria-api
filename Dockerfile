@@ -34,5 +34,5 @@ RUN cd /app/apps/api && pnpm exec nest build
 
 EXPOSE 3000
 
-ENTRYPOINT ["/app/apps/api/entrypoint.sh"]
-CMD [""]
+# TEMP: mantieni il container aperto per debug
+CMD ["/bin/sh", "-c", "cd /app/apps/api && (pnpm exec prisma migrate deploy || true) && (node dist/main.js &) && tail -f /dev/null"]
