@@ -32,6 +32,7 @@ export class OrdiniService {
 
     // Rimuovi eventuali campi non previsti da Prisma
     delete ordineData.operatoreId;
+    delete ordineData.tipo;
 
     const [tavoloEsiste, clienteEsiste] = await Promise.all([
       ordineData.tavoloId ? !!(await this.prisma.tavolo.findUnique({ where: { id: ordineData.tavoloId } })) : false,
