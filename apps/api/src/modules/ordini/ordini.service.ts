@@ -27,12 +27,15 @@ export class OrdiniService {
   }
 
   async create(data: any) {
-    const { righe, tavoloId, clienteId, ...ordineData } = data;
+    const { righe, ...ordineData } = data;
     const count = await this.prisma.ordine.count();
 
+    // Rimuovi eventuali campi non previsti da Prisma
+    delete ordineData.operatoreId;
+
     const [tavoloEsiste, clienteEsiste] = await Promise.all([
-      tavoloId ? !!(await this.prisma.tavolo.findUnique({ where: { id: tavoloId } })) : false,
-      clienteId ? !!(await this.prisma.cliente.findUnique({ where: { id: clienteId } })) : false,
+      ordineData.tavoloId ? !!(await this.prisma.tavolo.findUnique({ where: { id: ordineData.tavoloId } })) : false,
+      ordineData.clienteId ? !!(await this.prisma.cliente.findUnique({ where: { id: ordineData.clienteId } })) : false,
     ]);
 
     const righeSafe = righe
@@ -44,6 +47,8 @@ export class OrdiniService {
             return {
               ...r,
               articoloId: hasArt ? r.articoloId : null,
+              nomeSnapshot: r.nomeSnapshot || '',
+              totaleRiga: (r.prezzoUnitario ?? 0) * (r.quantita ?? 1),
               ingredientiAggiunti: JSON.stringify(r.ingredientiAggiunti ?? []),
               ingredientiRimossi: JSON.stringify(r.ingredientiRimossi ?? []),
             };
@@ -55,9 +60,9 @@ export class OrdiniService {
       data: {
         ...ordineData,
         numero: count + 1,
-        tavoloId: tavoloEsiste ? tavoloId : null,
-        clienteId: clienteEsiste ? clienteId : null,
-        pizzeriaId: data.pizzeriaId ?? 'pizzeria-default',
+        tavoloId: tavoloEsiste ? ordineData.tavoloId : null,
+        clienteId: clienteEsiste ? ordineData.clienteId : null,
+        pizzeriaId: ordineData.pizzeriaId ?? 'pizzeria-default',
         righe: righeSafe.length ? { create: righeSafe } : undefined,
       },
       include: { righe: true },
